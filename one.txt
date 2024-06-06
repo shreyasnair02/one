@@ -1,0 +1,411 @@
+# 1.Given a numeric vector, extract and print the values at even-numbered indices.
+
+numbers <- c(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+even <- 5
+even <- numbers[seq(2,by=2)]
+print(even)
+
+# 2. Write a program to create a 2D array with random integers and display it.
+
+random_array <- matrix(sample(1:10, size = 3 * 3, replace = TRUE), nrow = 3)
+print(random_array)
+
+
+# 3.Write a program to access and print specific elements, rows, and columns of a 2D array.
+
+print(random_array[1,1])
+
+print(mean(random_array))
+
+# 4.Create a program that constructs a list with elements of different data types (numeric, character, logical).
+
+my_list <- list(numeric=3.14,character="hello")
+print(my_list)
+
+# 5. sequence of strings to character vector
+
+seqofstr <- c('ehllo','world')
+charvec <- as.character(seqofstr)
+print(seqofstr)
+print(charvec)
+
+print(nchar(seqofstr[1]))
+
+# 6. read csv and identify missing values and print the count of missing values in each column
+
+data <- read.csv('./labsheets_datasets/sales_data.csv')
+head(data)
+missing_values <- is.na(data)
+print(missing_values)
+
+no_of_missing <- colSums(is.na(data))
+print(no_of_missing)
+
+plot(data$product)
+
+# 7. handling missing values
+# omit
+ommited <- na.omit(data)
+print(colSums(is.na(ommited))) # 0
+
+print(data[data$product == "Coat",])
+
+# replace with mean
+
+rwm <- data
+rwm$x[is.na(rwm$x)] <- mean(rwm$x,na.rm=TRUE)
+rwm$y[is.na(rwm$y)] <- mean(rwm$y,na.rm=TRUE)
+print(rwm)
+print(colSums(is.na(data)))
+print(colSums(is.na(rwm)))
+
+# apply min max scaling
+
+# library(stats)
+# data <- na.omit(data)
+# head(data)
+# data['quantity'] <- scale(data['quantity'])
+# head(data)
+# min_max_normalized <- (data - min(data)) / (max(data) - min(data))
+# head(min_max_normalized)
+data <- read.csv('./labsheets_datasets/sales_data.csv')
+head(data)
+data <- na.omit(data)
+min_max_scale <- function(x) {
+  col <- ((x - min(x)) / (max(x) - min(x)))
+  return(col)
+}
+
+data$price <- min_max_scale(data$price)
+head(data)
+
+# robust filter
+library(robfilter)
+robust_scaled_data <- robust.filter(y = data$y, width = 3, trend = "RM", scale = "QN", outlier = "T")
+print(robust_scaled_data)
+
+
+# Remove duplicates
+
+print(nrow(data)) #365
+data <- unique(data)
+print(nrow(data)) #364
+
+# Total revenue by product
+sum_of_revenue <- aggregate(revenue ~ product, data,sum)
+print(sum_of_revenue)
+
+# find product with highest revenue
+max_rev <- which.max(data$revenue)
+print(data[max_rev,])
+sum(data$quantity)
+
+str(data) # structure of the data frame
+
+
+## GGPLOT2 vizualizations
+install.packages('pacman')
+library(pacman)
+pacman::p_load(ggplot2)
+
+#4.Scatter Plot - Create a scatter plot to visualize the relationship between 'quantity' and 'revenue'.
+ggplot(data,aes(x=quantity,y=revenue))+
+  geom_point()
+
+# 5.Bar Plot - Create a bar plot to display the total revenue for each 'category'.
+ggplot(data,aes(x=category,y=revenue))+
+  geom_bar(stat="identity")
+
+# 6.Line Plot - Create a line plot to show the trend of 'revenue' over time.
+data$date <- as.Date(data$date,format = "%d-%m-%Y")
+ggplot(data,aes(x=date,y=revenue))+
+  geom_line()
+# 7.Histogram - Create a histogram to visualize the distribution of 'price'.
+ggplot(data, aes(x = price)) +
+  geom_histogram(binwidth = 0.01)
+
+# 8.Pie Chart - Create a pie chart to display the percentage distribution of products by 'category'.
+pacman::p_load(dplyr)
+library(ggplot2)
+
+# Calculate percentage distribution of products by category
+category_percentage <- data %>%
+  group_by(category) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = count / sum(count) * 100)
+
+# Create pie chart
+ggplot(category_percentage, aes(x = "", y = percentage, fill = category)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y", start = 0) +
+  labs(title = "Percentage Distribution of Products by Category") +
+  theme_void() +
+  scale_fill_manual(values = c("Electronics" = "skyblue", "Clothing" = "salmon", "Accessories" = "lightgreen")) +
+  geom_text(aes(label = paste0(round(percentage, 1), "%")), position = position_stack(vjust = 0.5))
+
+
+# glimpse 
+
+glimpse(data)
+str(data)
+summary(data)
+
+
+## practice - dplyr
+
+pacman::p_load(dplyr)
+charts_data <- read.csv('./labsheets_datasets/charts.csv')
+10 %>%
+  head(charts_data,.)
+
+song_artist <- charts_data %>% select(song,artist)
+
+# add a featuring column to check if artist includes the word "featuring
+
+new_data <- charts_data %>% 
+  select(song,artist) %>%
+  mutate(isColab=grepl('Featur',artist))
+
+print(charts_data[charts_data$weeks.on.board==1,])
+
+charts_data %>% 
+  select(song,artist,weeks.on.board)%>%
+  mutate(isColab=grepl('Feature',artist)) %>%
+  select(artist,isColab,song,weeks.on.board) %>%
+  filter(weeks.on.board<=1)
+
+# show the songs with max weeks on board
+
+charts_data %>%
+  select(song,artist,weeks.on.board)%>%
+  group_by(song)%>%
+  select(song,artist,weeks.on.board)%>%
+  summarize(popular=max(weeks.on.board)) %>%
+  arrange(desc(popular))
+
+
+
+library(dplyr)
+
+# Create a sample data frame
+df1 <- data.frame(id = c(1, 2, 3), x1 = c(1, 2, 3))
+df2 <- data.frame(id = c(1, 2, 3), x2 = c(6, 7, 8))
+
+# inner join
+
+# Print the data frames
+print(df1)
+print(df2)
+
+inner_join_result <- inner_join(df1,df2)
+print(inner_join_result)
+
+outer_join_result <- left_join(df1,df2)
+print(outer_join_result)
+
+print(data)
+print(var(data))
+head(data)
+# coorelation analysis
+correlation_matrix <- cor(data[c("price", "quantity", "revenue")])
+
+# Print the correlation matrix
+print(correlation_matrix)
+
+
+data <-iris
+head(data)
+
+correlation_matrix <- cor(data[c("Petal.Length","Petal.Width")])
+print(correlation_matrix)
+
+# correlation plot
+library(corrplot)
+corrplot(correlation_matrix, method = "circle")
+
+
+## svm 
+
+install.packages('caret')
+install.packages('e1071')
+library(caret)
+library(e1071)
+
+data <- iris
+train_index <- createDataPartition(data$Species,p = 0.7,list = FALSE)
+print(train_index)
+train_set <- data[train_index,]
+test_set <- data[-train_index,]
+print(nrow(train_set))
+print(nrow(test_set))
+
+svm_model <- svm(Species ~ .,data=train_set,kernel="radial")
+predictions <- predict(svm_model,test_set)
+confusion_matrix <- table(test_set$Species, predictions)
+print(confusion_matrix)
+
+accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+print(paste("Accuracy: ", accuracy))
+
+
+# linear regression
+
+train_index <- createDataPartition(mtcars$mpg, p = 0.7, list = FALSE)
+train_set <- mtcars[train_index, ]
+test_set <- mtcars[-train_index, ]
+
+# Build a regression model
+model <- lm(mpg ~ wt, data = train_set)
+
+# Make predictions on the test set
+predictions <- predict(model, test_set[, c("wt")])
+
+# Evaluate the model
+evaluation_metrics <- c("RMSE", "MAE", "R-Squared")
+for (metric in evaluation_metrics) {
+  if (metric == "RMSE") {
+    rmse <- sqrt(mean((predictions - test_set$mpg)^2))
+    print(paste("Root Mean Squared Error (RMSE): ", rmse))
+  } else if (metric == "MAE") {
+    mae <- mean(abs(predictions - test_set$mpg))
+    print(paste("Mean Absolute Error (MAE): ", mae))
+  } else if (metric == "R-Squared") {
+    r_squared <- summary(model)$r.squared
+    print(paste("R-Squared: ", r_squared))
+  }
+}
+
+# Print the evaluation metrics
+print(evaluation_metrics)
+
+train_index <- createDataPartition(mtcars$mpg, p = 0.7, list = FALSE)
+train_set <- mtcars[train_index, ]
+test_set <- mtcars[-train_index, ]
+
+# Build a regression model
+model <- lm(mpg ~ wt + hp + cyl, data = train_set)
+
+# Make predictions on the test set
+predictions <- predict(model, test_set[, c("wt", "hp", "cyl")])
+
+# Find MSE and RMSE
+mse <- mean((predictions - test_set$mpg)^2)
+rmse <- sqrt(mse)
+print(paste("Mean Squared Error (MSE): ", mse))
+print(paste("Root Mean Squared Error (RMSE): ", rmse))
+
+# Evaluate the model
+evaluation_metrics <- c("RMSE", "MAE", "R-Squared")
+for (metric in evaluation_metrics) {
+  if (metric == "RMSE") {
+    rmse <- sqrt(mean((predictions - test_set$mpg)^2))
+    print(paste("Root Mean Squared Error (RMSE): ", rmse))
+  } else if (metric == "MAE") {
+    mae <- mean(abs(predictions - test_set$mpg))
+    print(paste("Mean Absolute Error (MAE): ", mae))
+  } else if (metric == "R-Squared") {
+    r_squared <- summary(model)$r.squared
+    print(paste("R-Squared: ", r_squared))
+  }
+}
+
+# Print the evaluation metrics
+print(evaluation_metrics)
+
+
+## KNN
+
+train_index <- createDataPartition(iris$Species, p = 0.7, list = FALSE)
+train_set <- iris[train_index, ]
+test_set <- iris[-train_index, ]
+
+# Build a K-Nearest Neighbor model with K=3
+knn_model <- knn(train_set[, 1:4], train_set[, 5], test_set[, 1:4], k = 3)
+
+# Make predictions on the test set
+predictions <- knn_model
+
+# Print the evaluation metrics
+accuracy <- sum(predictions == test_set[, 5]) / length(test_set[, 5])
+print(paste("Accuracy: ", accuracy))
+
+# Construct the model for values of k equal to 5, 7, and 9
+k_values <- c(5, 7, 9)
+accuracy_values <- c()
+for (k in k_values) {
+  knn_model <- knn(train_set[, 1:4], train_set[, 5], test_set[, 1:4], k = k)
+  predictions <- knn_model
+  accuracy <- sum(predictions == test_set[, 5]) / length(test_set[, 5])
+  accuracy_values <- c(accuracy_values, accuracy)
+}
+
+# Create a table displaying the corresponding accuracy values
+accuracy_table <- data.frame(k = k_values, accuracy = accuracy_values)
+print(accuracy_table)
+
+# Identify the optimized k value
+optimized_k <- which.max(accuracy_values)
+print(paste("Optimized k value: ", k_values[optimized_k]))
+
+#  Naive bayes
+# Load iris dataset
+data(iris)
+
+# Split the data into training (70%) and testing (30%) sets
+set.seed(123)
+train_index <- createDataPartition(iris$Species, p = 0.7, list = FALSE)
+train_set <- iris[train_index, ]
+test_set <- iris[-train_index, ]
+
+# Build a Naive Bayes classification model
+model <- naiveBayes(Species ~ ., data = train_set)
+
+# Make predictions on the test set
+predictions <- predict(model, test_set[, 1:4])
+
+# Print the evaluation metrics
+accuracy <- sum(predictions == test_set[, 5]) / length(test_set[, 5])
+print(paste("Accuracy: ", accuracy))
+
+# Decision tree
+
+# Load iris dataset
+data(iris)
+
+# Split the data into training (70%) and testing (30%) sets
+set.seed(123)
+train_index <- createDataPartition(iris$Species, p = 0.7, list = FALSE)
+train_set <- iris[train_index, ]
+test_set <- iris[-train_index, ]
+
+# Build a Decision Tree classification model
+model <- rpart(Species ~ ., data = train_set)
+
+# Make predictions on the test set
+predictions <- predict(model, test_set[, 1:4], type = "class")
+
+# Print the evaluation metrics
+accuracy <- sum(predictions == test_set[, 5]) / length(test_set[, 5])
+print(paste("Accuracy: ", accuracy))
+
+# Random forest
+# Split the data into training (70%) and testing (30%) sets
+set.seed(123)
+train_index <- createDataPartition(iris$Species, p = 0.7, list = FALSE)
+train_set <- iris[train_index, ]
+test_set <- iris[-train_index, ]
+
+# Build the Random Forest classification model
+model <- randomForest(Species ~ ., data = train_set)
+
+# Make predictions on the test set
+predictions <- predict(model, test_set[, 1:4])
+
+# Print the confusion matrix
+confusion_matrix <- table(test_set$Species, predictions)
+print(confusion_matrix)
+
+# Calculate accuracy
+accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+print(paste("Accuracy: ", accuracy))
+
